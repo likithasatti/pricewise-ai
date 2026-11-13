@@ -46,11 +46,11 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# CORS Middleware (supports React frontend on Vite port 5173 / Render / Firebase)
+# CORS Middleware (supports React frontend on Vite port 5173 / Vercel / Render)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
