@@ -2,7 +2,7 @@ import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyAw4gwJncDP9rIDj2CISdB_uTw953pG7kE",
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "",
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "pricewise-ai-be26e.firebaseapp.com",
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "pricewise-ai-be26e",
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "pricewise-ai-be26e.firebasestorage.app",

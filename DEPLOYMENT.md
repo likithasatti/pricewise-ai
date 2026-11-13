@@ -69,7 +69,7 @@ Both Render and Vercel automatically build and deploy directly from your GitHub 
    - **Key:** `VITE_API_BASE_URL`
    - **Value:** `https://pricewise-ai-backend.onrender.com/api` *(use your actual Render backend URL from Step 2)*
    - *(Optional Firebase key if using authentication)*:
-     - `VITE_FIREBASE_API_KEY` = `AIzaSyAw4gwJncDP9rIDj2CISdB_uTw953pG7kE`
+     - `VITE_FIREBASE_API_KEY` = `your_firebase_api_key_here`
 6. Click **"Deploy"**.
 7. In ~30 seconds, Vercel will give you your live production URL:
    `https://pricewise-ai.vercel.app`
