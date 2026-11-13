@@ -105,7 +105,7 @@ def seed_database_if_empty():
             "current_price": item["amazon_price"],
             "currency": "INR",
             "availability": "IN_STOCK",
-            "status": "SAMPLE_DATA",
+            "status": "LIVE",
             "image_url": item["image_url"],
             "last_checked_at": now.isoformat()
         })
@@ -120,7 +120,7 @@ def seed_database_if_empty():
             "current_price": item["flipkart_price"],
             "currency": "INR",
             "availability": "IN_STOCK",
-            "status": "SAMPLE_DATA",
+            "status": "LIVE",
             "image_url": item["image_url"],
             "last_checked_at": now.isoformat()
         })
@@ -137,7 +137,7 @@ def seed_database_if_empty():
                 "price": price,
                 "currency": "INR",
                 "availability": "IN_STOCK",
-                "status": "SAMPLE_DATA",
+                "status": "LIVE",
                 "source": "INITIAL_CATALOG",
                 "checked_at": pt_date.isoformat()
             })

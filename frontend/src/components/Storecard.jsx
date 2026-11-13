@@ -18,8 +18,8 @@ function Storecard({ storePrice, onTrack }) {
     isLowest,
   } = storePrice;
 
-  const isUnavailable = availability === "UNAVAILABLE" || price == null || price <= 0;
-  const isLive = status === "LIVE" && !isUnavailable;
+  const isUnavailable = availability === "UNAVAILABLE" || price == null || price <= 0 || status === "CONFIG_REQUIRED" || status === "UNAVAILABLE";
+  const isLive = !isUnavailable;
   const storeUpper = (store || "").toUpperCase();
 
   const getStoreLogoColor = (name) => {

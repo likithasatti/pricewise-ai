@@ -23,8 +23,8 @@ function Productcard({ product }) {
   const amazonStore = stores.find((s) => s.store?.toUpperCase() === "AMAZON");
   const flipkartStore = stores.find((s) => s.store?.toUpperCase() === "FLIPKART");
 
-  const hasAmazonPrice = amazonStore && amazonStore.price != null && amazonStore.price > 0 && amazonStore.status === "LIVE";
-  const hasFlipkartPrice = flipkartStore && flipkartStore.price != null && flipkartStore.price > 0 && flipkartStore.status === "LIVE";
+  const hasAmazonPrice = amazonStore && amazonStore.price != null && amazonStore.price > 0 && amazonStore.status !== "UNAVAILABLE" && amazonStore.status !== "CONFIG_REQUIRED";
+  const hasFlipkartPrice = flipkartStore && flipkartStore.price != null && flipkartStore.price > 0 && flipkartStore.status !== "UNAVAILABLE" && flipkartStore.status !== "CONFIG_REQUIRED";
   const bothAvailable = hasAmazonPrice && hasFlipkartPrice;
 
   // Determine cheaper store when both exist
