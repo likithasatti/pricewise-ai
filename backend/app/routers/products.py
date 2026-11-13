@@ -26,15 +26,17 @@ def get_all_products():
 
 @router.get("/search", response_model=ProductSearchResultDTO)
 async def search_products(
-    query: str = Query("", description="Product name or keyword"),
+    query: Optional[str] = Query(None, description="Product name or keyword"),
+    q: Optional[str] = Query(None, description="Product name or keyword alias"),
     authorization: Optional[str] = Header(None, alias="Authorization")
 ):
     """
     Unified multi-store search across Amazon and Flipkart.
     Returns correlated comparative results, savings calculations, and provider statuses.
     """
+    search_term = (query or q or "").strip()
     user_id = extract_uid_or_null(authorization)
-    result = await product_search_service.search(query=query, user_id=user_id)
+    result = await product_search_service.search(query=search_term, user_id=user_id)
     return result
 
 

@@ -108,7 +108,7 @@ function Productcard({ product }) {
             </div>
             <div className="store-price-col">
               {hasAmazonPrice ? (
-                <span className="store-price-val">₹{amazonStore.price.toLocaleString("en-IN")}</span>
+                <span className="store-price-val">₹{Math.round(amazonStore.price).toLocaleString("en-IN")}</span>
               ) : (
                 <span className="store-unavailable">No matching result</span>
               )}
@@ -136,7 +136,7 @@ function Productcard({ product }) {
             </div>
             <div className="store-price-col">
               {hasFlipkartPrice ? (
-                <span className="store-price-val">₹{flipkartStore.price.toLocaleString("en-IN")}</span>
+                <span className="store-price-val">₹{Math.round(flipkartStore.price).toLocaleString("en-IN")}</span>
               ) : (
                 <span className="store-unavailable">No matching result</span>
               )}
@@ -162,7 +162,7 @@ function Productcard({ product }) {
         {bothAvailable && savingsAmount > 0 && (
           <div className="savings-banner">
             <span className="savings-highlight">
-              ✓ You save ₹{savingsAmount.toLocaleString("en-IN")} ({savingsPercentage}%) by choosing {cheaperStore === "AMAZON" ? "Amazon" : "Flipkart"}
+              ✓ You save ₹{Math.round(savingsAmount).toLocaleString("en-IN")} ({savingsPercentage}%) by choosing {cheaperStore === "AMAZON" ? "Amazon" : "Flipkart"}
             </span>
           </div>
         )}

@@ -191,11 +191,65 @@ def db_search_products(query: str) -> List[Dict[str, Any]]:
     )
     rows = [dict(r) for r in cursor.fetchall()]
 
-    # If no match and query has multiple words, match any token (e.g. "Apple laptop")
     tokens = [t for t in safe_q.split() if len(t) >= 2]
+    STOPWORDS = {"set", "sets", "and", "with", "for", "the", "in", "of", "on", "a", "an", "pro", "max", "edition", "machine"}
+    meaningful_tokens = [t for t in tokens if t not in STOPWORDS]
+    if not meaningful_tokens:
+        meaningful_tokens = tokens
+
+    # Multi-word: ALL meaningful tokens must match (e.g. "Apple laptop")
     if not rows and len(tokens) > 1:
-        for t in tokens:
+        clauses = []
+        params = []
+        for t in meaningful_tokens:
             t_pat = f"%{t}%"
+            clauses.append(
+                "(LOWER(canonical_name) LIKE ? OR LOWER(product_name) LIKE ? OR LOWER(brand) LIKE ? OR LOWER(model) LIKE ? OR LOWER(category) LIKE ?)"
+            )
+            params.extend([t_pat, t_pat, t_pat, t_pat, t_pat])
+
+        sql = f"SELECT DISTINCT * FROM products WHERE {' AND '.join(clauses)} ORDER BY id ASC"
+        cursor.execute(sql, tuple(params))
+        rows = [dict(r) for r in cursor.fetchall()]
+
+    # Synonym expansion if still no rows
+    if not rows:
+        SYNONYMS = {
+            "kurtha": ["kurta", "kurti", "ethnic"],
+            "kurti": ["kurta", "kurtha", "ethnic"],
+            "kurta": ["kurtha", "kurti", "ethnic"],
+            "headset": ["headphone", "headphones", "audio", "earphone"],
+            "headphone": ["headset", "headphones", "audio"],
+            "headphones": ["headset", "headphone", "audio"],
+            "mobile": ["phone", "smartphone"],
+            "mobiles": ["phone", "smartphone"],
+            "phone": ["mobile", "smartphone"],
+            "laptop": ["macbook", "notebook"],
+            "laptops": ["macbook", "notebook"],
+            "macbook": ["laptop"],
+            "mac": ["macbook", "apple"],
+            "shoe": ["shoes", "sneaker", "sneakers", "footwear"],
+            "shoes": ["shoe", "sneaker", "sneakers", "footwear"],
+            "sneakers": ["shoes", "shoe", "sneaker", "footwear"],
+            "frock": ["dress", "frocks"],
+            "frocks": ["dress", "frock"],
+            "dress": ["frock", "frocks"],
+            "washer": ["washing machine"],
+            "fridge": ["refrigerator"],
+            "refrigerator": ["fridge"],
+            "watch": ["smartwatch"],
+            "smartwatch": ["watch"],
+            "tv": ["television"],
+        }
+        syn_targets = set()
+        for t in meaningful_tokens:
+            if t in SYNONYMS:
+                syn_targets.update(SYNONYMS[t])
+        if safe_q in SYNONYMS:
+            syn_targets.update(SYNONYMS[safe_q])
+
+        for syn in syn_targets:
+            s_pat = f"%{syn}%"
             cursor.execute(
                 """
                 SELECT DISTINCT * FROM products
@@ -204,15 +258,14 @@ def db_search_products(query: str) -> List[Dict[str, Any]]:
                    OR LOWER(brand) LIKE ?
                    OR LOWER(model) LIKE ?
                    OR LOWER(category) LIKE ?
-                   OR LOWER(description) LIKE ?
                 ORDER BY id ASC
                 """,
-                (t_pat, t_pat, t_pat, t_pat, t_pat, t_pat)
+                (s_pat, s_pat, s_pat, s_pat, s_pat)
             )
-            token_rows = [dict(r) for r in cursor.fetchall()]
-            for tr in token_rows:
-                if not any(r["id"] == tr["id"] for r in rows):
-                    rows.append(tr)
+            syn_rows = [dict(r) for r in cursor.fetchall()]
+            for sr in syn_rows:
+                if not any(r["id"] == sr["id"] for r in rows):
+                    rows.append(sr)
 
     conn.close()
     return rows

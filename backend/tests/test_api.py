@@ -130,3 +130,20 @@ def test_ai_title_matching():
     assert response.status_code == 200
     data = response.json()
     assert data["isMatch"] is True
+
+
+def test_search_domain_accuracy():
+    response = client.get("/api/products/search?q=Kurtha+Sets")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["totalFound"] > 0
+    first = data["results"][0]
+    assert "Ethnic" in first["category"]
+    assert "photo-1526170375885-4d8ecf77b99f" not in first["imageUrl"]
+    assert first["lowestPrice"] > 0
+    # Stores must have Amazon and Flipkart LIVE
+    stores = {s["store"]: s for s in first["stores"]}
+    assert "AMAZON" in stores
+    assert "FLIPKART" in stores
+    assert stores["AMAZON"]["status"] == "LIVE"
+    assert stores["FLIPKART"]["status"] == "LIVE"

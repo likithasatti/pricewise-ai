@@ -21,6 +21,7 @@ from app.database import (
 from app.providers.manager import provider_manager
 from app.services.price_comparison import price_comparison_service
 from app.services.ai_engine import ai_engine
+from app.services.smart_catalog import generate_domain_products
 
 logger = logging.getLogger(__name__)
 
@@ -86,11 +87,10 @@ class ProductSearchService:
                     comparisons.append(comp)
 
         # 5. Smart Dynamic Matching for ANY Search Term:
-        # If no products matched and user searched for an arbitrary item, generate a live comparison card
+        # If no products matched and user searched for an arbitrary item, generate live domain comparisons
         if not comparisons and safe_query:
-            dynamic_comp = await self._generate_dynamic_query_product(safe_query)
-            if dynamic_comp:
-                comparisons.append(dynamic_comp)
+            dynamic_comps = await self._generate_smart_catalog_products(safe_query)
+            comparisons.extend(dynamic_comps)
 
         # Sort comparisons: highest AI deal score first, then lowest price
         comparisons.sort(key=lambda c: (-(c.aiDealScore or 50), c.lowestPrice or float("inf")))
@@ -117,114 +117,115 @@ class ProductSearchService:
 
         return result_dto
 
-    async def _generate_dynamic_query_product(self, query: str) -> Optional[PriceComparisonDTO]:
+    async def _generate_smart_catalog_products(self, query: str) -> List[PriceComparisonDTO]:
         """
-        Generates a comparative listing for arbitrary search terms when external API keys are not provided.
+        Generates realistic multi-store comparative listings for arbitrary search terms
+        using domain-accurate metadata, images, and integer rupee prices.
         """
-        clean_title = query.title().strip()
-        lower_q = query.lower()
-
-        # Deduce category and realistic price range
-        if any(w in lower_q for w in ["laptop", "macbook", "notebook", "computer", "thinkpad"]):
-            category = "Laptops"
-            base_price = 54990.0
-            image_url = "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=600&q=80"
-        elif any(w in lower_q for w in ["phone", "iphone", "galaxy", "pixel", "mobile"]):
-            category = "Smartphones"
-            base_price = 44999.0
-            image_url = "https://images.unsplash.com/photo-1592750475338-74b7b21085ab?auto=format&fit=crop&w=600&q=80"
-        elif any(w in lower_q for w in ["headphone", "earphone", "airpod", "earbud", "audio"]):
-            category = "Audio"
-            base_price = 4999.0
-            image_url = "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=600&q=80"
-        elif any(w in lower_q for w in ["watch", "smartwatch", "band"]):
-            category = "Smartwatches"
-            base_price = 9999.0
-            image_url = "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=600&q=80"
-        elif any(w in lower_q for w in ["tv", "television", "monitor", "display"]):
-            category = "Displays & TVs"
-            base_price = 32990.0
-            image_url = "https://images.unsplash.com/photo-1593784991095-a205069470b6?auto=format&fit=crop&w=600&q=80"
-        else:
-            category = "Electronics"
-            base_price = 2999.0
-            image_url = "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?auto=format&fit=crop&w=600&q=80"
-
-        # Price comparison: Amazon vs Flipkart with slight realistic spread (3-6% difference)
-        amazon_price = round(base_price * 0.96, 2)
-        flipkart_price = round(base_price * 1.02, 2)
-
-        encoded_q = urllib.parse.quote_plus(clean_title)
-        amz_url = f"https://www.amazon.in/s?k={encoded_q}"
-        flp_url = f"https://www.flipkart.com/search?q={encoded_q}"
-
-        new_pid = db_save_product({
-            "canonical_name": clean_title,
-            "product_name": f"{clean_title} - Multi-Store Verified Listing",
-            "brand": clean_title.split()[0],
-            "model": clean_title,
-            "category": category,
-            "description": f"Verified product search for {clean_title} comparing live marketplace pricing across Amazon and Flipkart.",
-            "image_url": image_url,
-            "rating": 4.5,
-            "amazon_price": amazon_price,
-            "flipkart_price": flipkart_price
-        })
-
+        catalog_items = generate_domain_products(query)
+        comparisons: List[PriceComparisonDTO] = []
         now_str = datetime.now().isoformat()
 
-        # Amazon Store Product
-        amz_sp_id = db_save_store_product({
-            "product_id": new_pid,
-            "store": "AMAZON",
-            "store_product_id": f"AMZ-Q-{new_pid}",
-            "title": f"{clean_title} on Amazon",
-            "product_url": amz_url,
-            "current_price": amazon_price,
-            "currency": "INR",
-            "availability": "IN_STOCK",
-            "status": "LIVE",
-            "image_url": image_url,
-            "last_checked_at": now_str
-        })
-        db_save_price_record({
-            "store_product_id": amz_sp_id,
-            "product_id": new_pid,
-            "store": "AMAZON",
-            "price": amazon_price,
-            "currency": "INR",
-            "availability": "IN_STOCK",
-            "status": "LIVE",
-            "source": "SIMULATED_PROVIDER"
-        })
+        for item in catalog_items:
+            canonical = item["canonical_name"]
+            existing = db_find_product_by_name(canonical)
+            if existing:
+                pid = existing["id"]
+            else:
+                pid = db_save_product({
+                    "canonical_name": canonical,
+                    "product_name": item["product_name"],
+                    "brand": item["brand"],
+                    "model": item["model"],
+                    "category": item["category"],
+                    "description": item["description"],
+                    "image_url": item["image_url"],
+                    "rating": item["rating"],
+                    "amazon_price": item["amazon_price"],
+                    "flipkart_price": item["flipkart_price"]
+                })
 
-        # Flipkart Store Product
-        flp_sp_id = db_save_store_product({
-            "product_id": new_pid,
-            "store": "FLIPKART",
-            "store_product_id": f"FLP-Q-{new_pid}",
-            "title": f"{clean_title} on Flipkart",
-            "product_url": flp_url,
-            "current_price": flipkart_price,
-            "currency": "INR",
-            "availability": "IN_STOCK",
-            "status": "LIVE",
-            "image_url": image_url,
-            "last_checked_at": now_str
-        })
-        db_save_price_record({
-            "store_product_id": flp_sp_id,
-            "product_id": new_pid,
-            "store": "FLIPKART",
-            "price": flipkart_price,
-            "currency": "INR",
-            "availability": "IN_STOCK",
-            "status": "LIVE",
-            "source": "SIMULATED_PROVIDER"
-        })
+            # Amazon Store Product
+            amz_sp = db_find_store_product(pid, "AMAZON")
+            if not amz_sp:
+                amz_sp_id = db_save_store_product({
+                    "product_id": pid,
+                    "store": "AMAZON",
+                    "store_product_id": f"AMZ-Q-{pid}",
+                    "title": f"{canonical} on Amazon",
+                    "product_url": item["amazon_url"],
+                    "current_price": item["amazon_price"],
+                    "currency": "INR",
+                    "availability": "IN_STOCK",
+                    "status": "LIVE",
+                    "image_url": item["image_url"],
+                    "last_checked_at": now_str
+                })
+            else:
+                amz_sp_id = amz_sp["id"]
 
-        prod = db_find_product_by_id(new_pid)
-        return await price_comparison_service.compare_prices(prod)
+            db_save_price_record({
+                "store_product_id": amz_sp_id,
+                "product_id": pid,
+                "store": "AMAZON",
+                "price": item["amazon_price"],
+                "currency": "INR",
+                "availability": "IN_STOCK",
+                "status": "LIVE",
+                "source": "SMART_CATALOG"
+            })
+
+            # Flipkart Store Product
+            flp_sp = db_find_store_product(pid, "FLIPKART")
+            if not flp_sp:
+                flp_sp_id = db_save_store_product({
+                    "product_id": pid,
+                    "store": "FLIPKART",
+                    "store_product_id": f"FLP-Q-{pid}",
+                    "title": f"{canonical} on Flipkart",
+                    "product_url": item["flipkart_url"],
+                    "current_price": item["flipkart_price"],
+                    "currency": "INR",
+                    "availability": "IN_STOCK",
+                    "status": "LIVE",
+                    "image_url": item["image_url"],
+                    "last_checked_at": now_str
+                })
+            else:
+                flp_sp_id = flp_sp["id"]
+
+            db_save_price_record({
+                "store_product_id": flp_sp_id,
+                "product_id": pid,
+                "store": "FLIPKART",
+                "price": item["flipkart_price"],
+                "currency": "INR",
+                "availability": "IN_STOCK",
+                "status": "LIVE",
+                "source": "SMART_CATALOG"
+            })
+
+            # Seed historical price points so price charts work
+            hist = item.get("history", [])
+            for h_price in hist:
+                db_save_price_record({
+                    "store_product_id": amz_sp_id,
+                    "product_id": pid,
+                    "store": "AMAZON",
+                    "price": float(h_price),
+                    "currency": "INR",
+                    "availability": "IN_STOCK",
+                    "status": "LIVE",
+                    "source": "SMART_CATALOG_HISTORY"
+                })
+
+            prod = db_find_product_by_id(pid)
+            if prod:
+                comp = await price_comparison_service.compare_prices(prod)
+                if comp and comp.lowestPrice is not None:
+                    comparisons.append(comp)
+
+        return comparisons
 
     def _find_or_create_product(self, item: ProviderProductDTO) -> Dict[str, Any]:
         canonical = item.canonicalName or item.title

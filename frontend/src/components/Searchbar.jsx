@@ -44,10 +44,12 @@ function Searchbar({ initialQuery = "" }) {
 
       <div className="quick-tags">
         <span className="quick-label">Trending:</span>
-        <button type="button" onClick={() => handleQuickSearch("MacBook Air M2")}>MacBook Air M2</button>
+        <button type="button" onClick={() => handleQuickSearch("MacBook Air M2")}>MacBook</button>
         <button type="button" onClick={() => handleQuickSearch("iPhone 15")}>iPhone 15</button>
-        <button type="button" onClick={() => handleQuickSearch("Samsung Galaxy S24")}>Galaxy S24</button>
-        <button type="button" onClick={() => handleQuickSearch("Laptop")}>Laptops</button>
+        <button type="button" onClick={() => handleQuickSearch("Galaxy S24")}>Galaxy S24</button>
+        <button type="button" onClick={() => handleQuickSearch("Kurtha Sets")}>Kurtha Sets</button>
+        <button type="button" onClick={() => handleQuickSearch("Washing Machine")}>Washing Machine</button>
+        <button type="button" onClick={() => handleQuickSearch("Headphones")}>Headphones</button>
       </div>
     </div>
   );
