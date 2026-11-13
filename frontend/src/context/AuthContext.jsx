@@ -15,13 +15,33 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Listen for Firebase Auth state changes
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user);
+    let unsubscribe = () => {};
+    try {
+      unsubscribe = onAuthStateChanged(
+        auth,
+        (user) => {
+          setCurrentUser(user);
+          setLoading(false);
+        },
+        (error) => {
+          console.warn("Firebase Auth listener error:", error);
+          setLoading(false);
+        }
+      );
+    } catch (err) {
+      console.warn("Failed to initialize Firebase Auth listener:", err);
       setLoading(false);
-    });
+    }
 
-    return () => unsubscribe();
+    // Safety timeout: ensure loading state never blocks UI for more than 1.5 seconds
+    const timeout = setTimeout(() => {
+      setLoading(false);
+    }, 1500);
+
+    return () => {
+      unsubscribe();
+      clearTimeout(timeout);
+    };
   }, []);
 
   const login = (email, password) => {
@@ -34,7 +54,6 @@ export function AuthProvider({ children }) {
       await updateProfile(userCredential.user, {
         displayName: displayName.trim(),
       });
-      // Force update user state with new displayName
       setCurrentUser({ ...userCredential.user, displayName: displayName.trim() });
     }
     return userCredential;
