@@ -163,19 +163,57 @@ def db_find_product_by_name(name: str) -> Optional[Dict[str, Any]]:
 def db_search_products(query: str) -> List[Dict[str, Any]]:
     conn = get_db()
     cursor = conn.cursor()
-    pattern = f"%{query.strip().lower()}%"
+    safe_q = query.strip().lower()
+
+    # Strip trailing s for plural/singular matching (e.g. laptops -> laptop)
+    singular_q = safe_q[:-1] if safe_q.endswith("s") and len(safe_q) > 3 else safe_q
+
+    pat_exact = f"%{safe_q}%"
+    pat_sing = f"%{singular_q}%"
+
     cursor.execute(
         """
-        SELECT * FROM products
-        WHERE LOWER(canonical_name) LIKE ?
-           OR LOWER(product_name) LIKE ?
-           OR LOWER(brand) LIKE ?
-           OR LOWER(description) LIKE ?
+        SELECT DISTINCT * FROM products
+        WHERE LOWER(canonical_name) LIKE ? OR LOWER(canonical_name) LIKE ?
+           OR LOWER(product_name) LIKE ? OR LOWER(product_name) LIKE ?
+           OR LOWER(brand) LIKE ? OR LOWER(brand) LIKE ?
+           OR LOWER(model) LIKE ? OR LOWER(model) LIKE ?
+           OR LOWER(category) LIKE ? OR LOWER(category) LIKE ?
+           OR LOWER(description) LIKE ? OR LOWER(description) LIKE ?
         ORDER BY id ASC
         """,
-        (pattern, pattern, pattern, pattern)
+        (pat_exact, pat_sing,
+         pat_exact, pat_sing,
+         pat_exact, pat_sing,
+         pat_exact, pat_sing,
+         pat_exact, pat_sing,
+         pat_exact, pat_sing)
     )
     rows = [dict(r) for r in cursor.fetchall()]
+
+    # If no match and query has multiple words, match any token (e.g. "Apple laptop")
+    tokens = [t for t in safe_q.split() if len(t) >= 2]
+    if not rows and len(tokens) > 1:
+        for t in tokens:
+            t_pat = f"%{t}%"
+            cursor.execute(
+                """
+                SELECT DISTINCT * FROM products
+                WHERE LOWER(canonical_name) LIKE ?
+                   OR LOWER(product_name) LIKE ?
+                   OR LOWER(brand) LIKE ?
+                   OR LOWER(model) LIKE ?
+                   OR LOWER(category) LIKE ?
+                   OR LOWER(description) LIKE ?
+                ORDER BY id ASC
+                """,
+                (t_pat, t_pat, t_pat, t_pat, t_pat, t_pat)
+            )
+            token_rows = [dict(r) for r in cursor.fetchall()]
+            for tr in token_rows:
+                if not any(r["id"] == tr["id"] for r in rows):
+                    rows.append(tr)
+
     conn.close()
     return rows
 
