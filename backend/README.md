@@ -1,43 +1,47 @@
-# PriceWise AI - FastAPI Backend 🚀
+# PriceWise AI — FastAPI Backend ⚡
 
-This is the high-performance Python (FastAPI) backend for **PriceWise AI**. It provides RESTful endpoints for real-time price comparison, asynchronous marketplace scraping via RapidAPI, price tracking, search history, and AI deal prediction.
-
----
-
-## 🛠️ Tech Stack & Architecture
-
-- **Framework:** FastAPI (Python 3.11+)
-- **Asynchronous HTTP Client:** `httpx`
-- **Validation:** Pydantic v2
-- **Database:** SQLite (local persistent storage) + Google Cloud Firestore compatible
-- **Background Tasks:** `asyncio` scheduler for continuous price tracking
-- **AI Engine:** Linear regression trendlines, volatility modeling, and NLP token matching
+> High-performance asynchronous Python (FastAPI) backend for real-time marketplace aggregation, NLP title correlation, price tracking, and AI deal prediction.
 
 ---
 
-## 🚀 Running the Server
+## 🔗 Live Service & Documentation
+
+- **Live Service URL:** [https://pricewise-ai-backend-tz09.onrender.com/](https://pricewise-ai-backend-tz09.onrender.com/)
+- **Interactive Swagger Docs:** [https://pricewise-ai-backend-tz09.onrender.com/docs](https://pricewise-ai-backend-tz09.onrender.com/docs)
+- **ReDoc Documentation:** [https://pricewise-ai-backend-tz09.onrender.com/redoc](https://pricewise-ai-backend-tz09.onrender.com/redoc)
+
+---
+
+## 🛠️ Architecture & Components
+
+- **FastAPI (Python 3.11+):** High-throughput async REST API framework.
+- **AsyncIO & Httpx:** Concurrent non-blocking requests across Amazon and Flipkart marketplace providers via `asyncio.gather`.
+- **NLP Product Matcher:** Token normalization, Jaccard similarity, and strict model-variant filtering to correlate disparate marketplace titles.
+- **AI Deal Engine:** Time-series linear regression slope and volatility modeling calculating Buy Now vs. Wait signals and 0–100 Deal Quality Scores.
+- **SQLite Database:** Local persistent relational storage (`pricewise.db`).
+- **Scheduler:** Background async task continuously evaluating tracked items against price-drop alert thresholds.
+
+---
+
+## 🚀 Running Locally
 
 ```bash
 # 1. Install dependencies
 pip install -r requirements.txt
 
-# 2. Run the application
+# 2. Start Uvicorn server
 python run.py
 ```
 
-The server will start at:
-- **API URL:** `http://localhost:8080`
-- **Interactive Swagger Docs:** `http://localhost:8080/docs`
-- **Alternative ReDoc:** `http://localhost:8080/redoc`
+The server starts at `http://localhost:8080`.
+Open `http://localhost:8080/docs` to test endpoints via interactive Swagger UI.
 
 ---
 
-## 🧪 Testing
-
-Run the automated test suite:
+## 🧪 Automated Tests
 
 ```bash
 python -m pytest tests/test_api.py -v
 ```
 
-All 10 test cases verify health checks, multi-provider statuses, search correlation, product details, price history graphs, user search history, tracking CRUD, and AI predictions.
+11 automated tests verify health checks, provider statuses, search domain accuracy, product details, price histories, user tracking CRUD, and AI predictions.

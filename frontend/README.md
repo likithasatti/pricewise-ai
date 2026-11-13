@@ -1,16 +1,47 @@
-# React + Vite
+# PriceWise AI — Frontend Client 🌐
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+> Modern, responsive React 19 web application for real-time multi-marketplace price comparison, deal forecasting, and price tracking.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 🔗 Live Application
 
-## React Compiler
+- **Live URL:** [https://pricewise-ai-delta.vercel.app/](https://pricewise-ai-delta.vercel.app/)
+- **Backend API:** [https://pricewise-ai-backend-tz09.onrender.com/api](https://pricewise-ai-backend-tz09.onrender.com/api)
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+---
 
-## Expanding the ESLint configuration
+## 🛠️ Tech Stack
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+- **Framework:** React 19
+- **Build Tool:** Vite 6
+- **Routing:** React Router v7 (SPA with Vercel client-side rewrite)
+- **Charts:** Recharts (Interactive price history time-series)
+- **HTTP Client:** Axios (with automatic JWT header injection and timeout fallback)
+- **Styling:** Tailwind CSS & modular CSS
+- **Authentication:** Firebase Auth
+
+---
+
+## 🚀 Running Locally
+
+```bash
+# 1. Install dependencies
+npm install
+
+# 2. Start Vite dev server
+npm run dev
+```
+
+Visit **http://localhost:5173** in your browser.
+
+---
+
+## 📦 Building for Production
+
+```bash
+npm run build
+```
+
+Production artifacts are bundled into `dist/`.
+Client-side routing rules are defined in `vercel.json` to ensure deep links and refreshes on subroutes like `/results?q=MacBook` work seamlessly.
